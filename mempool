@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+q=;t=/tmp/mempool
+r=$(curl -s https://mempool.space/api/v1/fees/recommended)
+#a=$(jq -r .fastestFee <<< $r)
+#b=$(jq -r .halfHourFee <<< $r)
+#c=$(jq -r .hourFee <<< $r)
+#d=$(jq -r .economyFee <<< $r)
+e=$(jq -r .minimumFee <<< $r)
+
+if [ -f $t ]; then
+	x=$(cat $t)
+	x=$(bc -l <<< "(($e - $x) / $x) * 100")
+	y=$(bc <<< "$x >  25")
+	z=$(bc <<< "$x < -25")
+	x=${x#-}
+
+	if [ "$y" -eq 1 ]; then
+		q=$(printf "\x5b\x2b${x:0:3}\x25\x5d")
+	fi
+
+	if [ "$z" -eq 1 ]; then
+		q=$(printf "\x5b\x2d${x:0:3}\x25\x5d")
+	fi
+fi
+
+u="sat/vb"
+
+z=$(printf "minimum tx fee is %s %s %s" "$e" "$u" "$q")
+
+if [ ${#q} -ne 0 ]; then
+	#curl -sL -d "$z" ntfy.sh/mempool > /dev/null
+	echo "$z"
+fi
+
+echo $e > $t

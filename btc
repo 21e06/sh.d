@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+a=;
+b=/tmp/btcphp
+c="Pouchph/1.0.18 CFNetwork/1331.0.7 Darwin/21.4.0"
+d=$(curl -sL https://app.pouch.ph/api/v0/exchange-rates -A "$c")
+
+e=$(jq '.rates.PHP' <<< $d)
+f=$(jq '.rates.USD' <<< $d)
+
+if [ -f $b ]; then
+	t=$(cat $b)
+
+	g=$(bc -l <<< "(($e - $t) / $t) * 100")
+  h=$(bc <<< "$g > 0")
+  i=$(bc <<< "$g < 0")
+  g=${g#-}
+
+	if [ $h -eq 1 ]; then
+		a=$(printf "\x5b\x2b${g:0:4}\x25\x5d")
+  fi
+
+  if [ $i -eq 1 ]; then 
+		a=$(printf "\x5b\x2d${g:0:4}\x25\x5d")
+	fi
+fi
+
+echo $e > $b
+
+if [ ${#a} -ne 0 ]; then
+	printf "\xe2\x82\xb1%'.2f ; \x24%'.2f %s - pouch.ph\n" $(bc <<< "$e * 1.0065") "$f" "$a"
+fi
